@@ -1,0 +1,41 @@
+name: Run Review Scraper
+
+on:
+  workflow_dispatch:      # Allows you to click "Run workflow" manually
+  schedule:
+    - cron: '0 0 * * *'   # Optional: Runs automatically every day at midnight UTC
+
+jobs:
+  scrape-and-commit:
+    runs-on: ubuntu-latest
+    permissions:          # Permissions needed to push the Excel file back to the repo
+      contents: write
+
+    steps:
+      # 1. Checkout the repository content
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      # 3. Install dependencies
+      - name: Install Libraries
+        run: |
+          pip install pandas google-play-scraper openpyxl
+
+      # 4. Run the Python Script
+      - name: Run Scraper Script
+        run: python github_scraper.py
+
+      # 5. Commit and Push the Excel file if it changed
+      - name: Commit and Push Data
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add MoneyView_Dec25_Data.xlsx
+          # Only commit if the file has changed to avoid errors
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update Dec '25 review data" && git push)
